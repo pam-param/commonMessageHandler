@@ -1,6 +1,8 @@
 #include "commonmessagehandler.h"
 
 #include <QApplication>
+#include <QDir>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QTextStream>
 #include <QTime>
@@ -16,14 +18,18 @@ QHash <QtMsgType, QString>{
 
 Q_GLOBAL_STATIC(CommonMessageHandler, messageHandler)
 
-CommonMessageHandler::CommonMessageHandler(QObject *parent): QObject(parent)
+CommonMessageHandler::CommonMessageHandler(QObject *parent):
+    QObject(parent)
 {
-    mFile = new QFile(QApplication::applicationDirPath() + "/logs.txt", this);
+    QFileInfo fileInfo;
+    fileInfo.setFile(QDir(QApplication::applicationDirPath()), QString("logs.txt"));
+    mFile.setFileName(fileInfo.absoluteFilePath());
 }
 
-QString CommonMessageHandler::getMessage(const char* type, const QMessageLogContext &context, const QString &msg)
+QString CommonMessageHandler::getMessage(const char* type,
+                                         const QMessageLogContext &context,
+                                         const QString &msg)
 {
-    QByteArray localMsg = msg.toLocal8Bit();
     const char *file = context.file ? context.file : "";
     const char *function = context.function ? context.function : "";
 
@@ -33,96 +39,25 @@ QString CommonMessageHandler::getMessage(const char* type, const QMessageLogCont
                                     arg(context.line).
                                     arg(function).
                                     arg(type).
-                                    arg(localMsg.constData());
+                                    arg(msg);
     return message;
 }
 
-/*void CommonMessageHandler::install(QtMsgType type, const QMessageLogContext &context, const QString &msg)
-{
-    QByteArray localMsg = msg.toLocal8Bit();
-    const char *file = context.file ? context.file : "";
-    const char *function = context.function ? context.function : "";
-
-    const char *messageType;
-
-    switch(type) {
-    case QtDebugMsg: {
-        messageType = "Debug";
-        break;
-
-    }
-
-    case QtInfoMsg: {
-        messageType = "Information";
-        QMessageBox::information(nullptr, QObject::tr(messageType), QObject::tr(localMsg.constData()));
-
-        break;
-    }
-
-    case QtWarningMsg: {
-        messageType = "Warning";
-
-        #ifdef QT_DEBUG
-        QMessageBox::warning(nullptr, QObject::tr("Warning"), QObject::tr("Warning in %1: %2.\r\n"
-                                                                          "Call: %3.\r\n"
-                                                                          "Details: %4").arg(file).arg(context.line).arg(function).arg(localMsg.constData()));
-        #endif
-
-        break;
-    }
-
-    case QtCriticalMsg: {
-        messageType = "Critical";
-
-        #ifdef QT_DEBUG
-        QMessageBox::critical(nullptr, QObject::tr("Critical"), QObject::tr("Critical error in %1: %2.\r\n"
-                                                                            "Call: %3.\r\n"
-                                                                            "Details: %4").arg(file).arg(context.line).arg(function).arg(localMsg.constData()));
-        #endif
-
-        break;
-    }
-    case QtFatalMsg: {
-    messageType = "Fatal";
-        QMessageBox::critical(nullptr, QObject::tr("Fatal"), QObject::tr("Fatal error in %1: %2.\r\n"
-                                                                            "Call: %3.\r\n"
-                                                                            "Details: %4").arg(file).arg(context.line).arg(function).arg(localMsg.constData()));
-        break;
-    }
-
-    }
-
-    QString message = QObject::tr("[%1] %2: %3 <%4> %5: %6\n").
-                                    arg(QTime::currentTime().toString()).
-                                    arg(file).
-                                    arg(context.line).
-                                    arg(function).
-                                    arg(messageType).
-                                    arg(localMsg.constData());
-
-    QTextStream stream(type==QtInfoMsg ? stdout : stderr);
-    stream << message;
-
-    QFile *logFile = CommonMessageHandler::instance().mFile;
-
-    if(logFile->open(QFile::WriteOnly | QFile::Append)) {
-        QTextStream out(logFile);
-        out << message;
-        logFile->close();
-    }
-
-}*/
-
-void CommonMessageHandler::customMessageHandlerFunction(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+void CommonMessageHandler::customMessageHandlerFunction(QtMsgType type,
+                                                        const QMessageLogContext &context,
+                                                        const QString &msg)
 {
     auto msgType = types.value(type, "unknown").toStdString().c_str();
-    QString message = CommonMessageHandler::getMessage(msgType, context, msg);
-    CommonMessageHandler::log(type, message);
+
+    CommonMessageHandler& messageHandler = CommonMessageHandler::instance();
+
+    QString message = messageHandler.getMessage(msgType, context, msg);
+    messageHandler.log(type, message);
 
     #ifdef QT_DEBUG
-        CommonMessageHandler::showDebugMessageBox(type, context, msg);
+        messageHandler.showDebugMessageBox(type, context, msg);
     #else
-        CommonMessageHandler::showReleaseMessageBox(type, msg);
+        messageHandler.showReleaseMessageBox(type, msg);
     #endif
 }
 
@@ -137,51 +72,69 @@ void CommonMessageHandler::log(QtMsgType type, QString message)
     QTextStream stream(type==QtInfoMsg ? stdout : stderr);
     stream << message;
 
-    QFile *logFile = CommonMessageHandler::instance().mFile;
-
-    if(logFile->open(QFile::WriteOnly | QFile::Append)) {
-        QTextStream out(logFile);
+    if(mFile.open(QFile::WriteOnly | QFile::Append)) {
+        QTextStream out(&mFile);
         out << message;
-        logFile->close();
+        mFile.close();
     }
 }
 
-void CommonMessageHandler::showDebugMessageBox(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+void CommonMessageHandler::showDebugMessageBox(QtMsgType type,
+                                               const QMessageLogContext &context,
+                                               const QString &msg)
 {
     auto messageType = types.value(type, "unknown").toStdString().c_str();
+    auto message = msg.toStdString().c_str();
 
-    QByteArray localMsg = msg.toLocal8Bit();
     const char *file = context.file ? context.file : "";
     const char *function = context.function ? context.function : "";
 
     switch(type) {
 
     case QtInfoMsg: {
-        QMessageBox::information(nullptr, QObject::tr(messageType), QObject::tr(localMsg.constData()));
+        QMessageBox::information(nullptr, QObject::tr(messageType), QObject::tr(message));
 
         break;
     }
 
     case QtWarningMsg: {
-        QMessageBox::warning(nullptr, QObject::tr(messageType), QObject::tr("Warning in %1: %2.\r\n"
-                                                                          "Call: %3.\r\n"
-                                                                          "Details: %4").arg(file).arg(context.line).arg(function).arg(localMsg.constData()));
+        QMessageBox::warning(nullptr,
+                             QObject::tr(messageType),
+                             QObject::tr("Warning in %1: %2.\r\n"
+                                         "Call: %3.\r\n"
+                                         "Details: %4")
+                                         .arg(file)
+                                         .arg(context.line)
+                                         .arg(function)
+                                         .arg(message));
 
         break;
     }
 
     case QtCriticalMsg: {
 
-        QMessageBox::critical(nullptr, QObject::tr(messageType), QObject::tr("Critical error in %1: %2.\r\n"
-                                                                            "Call: %3.\r\n"
-                                                                            "Details: %4").arg(file).arg(context.line).arg(function).arg(localMsg.constData()));
+        QMessageBox::critical(nullptr,
+                              QObject::tr(messageType),
+                              QObject::tr("Critical error in %1: %2.\r\n"
+                                          "Call: %3.\r\n"
+                                          "Details: %4")
+                                          .arg(file)
+                                          .arg(context.line)
+                                          .arg(function)
+                                          .arg(message));
 
         break;
     }
     case QtFatalMsg: {
-        QMessageBox::critical(nullptr, QObject::tr(messageType), QObject::tr("Fatal error in %1: %2.\r\n"
-                                                                            "Call: %3.\r\n"
-                                                                            "Details: %4").arg(file).arg(context.line).arg(function).arg(localMsg.constData()));
+        QMessageBox::critical(nullptr,
+                              QObject::tr(messageType),
+                              QObject::tr("Fatal error in %1: %2.\r\n"
+                                          "Call: %3.\r\n"
+                                          "Details: %4")
+                                          .arg(file)
+                                          .arg(context.line)
+                                          .arg(function)
+                                          .arg(message));
         break;
     }
     default: break;
@@ -189,20 +142,25 @@ void CommonMessageHandler::showDebugMessageBox(QtMsgType type, const QMessageLog
     }
 }
 
-void CommonMessageHandler::showReleaseMessageBox(QtMsgType type, const QString &msg)
+void CommonMessageHandler::showReleaseMessageBox(QtMsgType type,
+                                                 const QString &msg)
 {
     auto messageType = types.value(type, "unknown").toStdString().c_str();
-    QByteArray localMsg = msg.toLocal8Bit();
+    auto message = msg.toStdString().c_str();
 
     switch(type) {
     case QtInfoMsg: {
-        QMessageBox::information(nullptr, QObject::tr(messageType), QObject::tr(localMsg.constData()));
+        QMessageBox::information(nullptr,
+                                 QObject::tr(messageType),
+                                 QObject::tr(message));
 
         break;
     }
 
     case QtFatalMsg: {
-        QMessageBox::critical(nullptr, QObject::tr(messageType), QObject::tr(localMsg.constData()));
+        QMessageBox::critical(nullptr,
+                              QObject::tr(messageType),
+                              QObject::tr(message));
         break;
     }
 

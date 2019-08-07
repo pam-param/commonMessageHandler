@@ -14,15 +14,25 @@ public:
     virtual ~CommonMessageHandler() override;
     static CommonMessageHandler& instance();
 
-    static void customMessageHandlerFunction(QtMsgType type, const QMessageLogContext &context, const QString &msg);
+    static void customMessageHandlerFunction(QtMsgType type,
+                                             const QMessageLogContext &context,
+                                             const QString &msg);
 
 private:
-    static QString getMessage(const char* type, const QMessageLogContext &context, const QString &msg);
-    static void log(QtMsgType type, QString msg);
-    static void showDebugMessageBox(QtMsgType type, const QMessageLogContext &context, const QString &msg);
-    static void showReleaseMessageBox(QtMsgType type, const QString &msg);
+    QString getMessage(const char* type,
+                              const QMessageLogContext &context,
+                              const QString &msg);
 
-    QFile *mFile;
+    void log(QtMsgType type, QString msg);
+
+    void showDebugMessageBox(QtMsgType type,
+                                    const QMessageLogContext &context,
+                                    const QString &msg);
+
+    void showReleaseMessageBox(QtMsgType type,
+                                      const QString &msg);
+
+    QFile mFile;
     static const QHash <QtMsgType, QString> types;
 
 };
