@@ -6,6 +6,8 @@
 #include <QObject>
 #include <QHash>
 
+#define CUSTOM_LOG CommonMessageHandler::customMessageHandlerFunction
+
 class CommonMessageHandler : public QObject
 {
     Q_OBJECT
@@ -18,21 +20,34 @@ public:
                                              const QMessageLogContext &context,
                                              const QString &msg);
 
-private:
-    QString getMessage(const char* type,
-                              const QMessageLogContext &context,
-                              const QString &msg);
+    void setIsFileLoggingActive(bool isActive);
+    void setIsStreamLoggingActive(bool isActive);
+    void setIsUILoggingActive(bool isActive);
 
-    void log(QtMsgType type, QString msg);
+    QString setFilePath(QString path = QString());
+
+private:
+    void logToFile(QtMsgType type,
+                   const QMessageLogContext &context,
+                   const QString &msg);
+    void logToStream(QtMsgType type,
+                     const QMessageLogContext &context,
+                     const QString &msg);
+    QString message(const char* type,
+                    const QMessageLogContext &context,
+                    const QString &msg);
 
     void showDebugMessageBox(QtMsgType type,
-                                    const QMessageLogContext &context,
-                                    const QString &msg);
+                             const QMessageLogContext &context,
+                             const QString &msg);
 
     void showReleaseMessageBox(QtMsgType type,
-                                      const QString &msg);
+                               const QString &msg);
 
     QFile mFile;
+    bool mIsFileLoggingActive = false;
+    bool mIsStreamLoggingActive = false;
+    bool mIsUILoggingActive = false;
     static const QHash <QtMsgType, QString> types;
 
 };

@@ -5,8 +5,9 @@
 
 int main(int argc, char** argv)
 {
-    qInstallMessageHandler(CommonMessageHandler::customMessageHandlerFunction);
     QApplication app(argc, argv);
+
+    qInstallMessageHandler(CUSTOM_LOG);
 
     MainWidget wgt;
     wgt.show();

@@ -2,7 +2,7 @@ QT += \
     core \
     widgets \
 
-DEFINES += QT_MESSAGELOGCONTEXT
+#DEFINES += QT_MESSAGELOGCONTEXT
 
 TARGET = myProgram
 TEMPLATE = app
