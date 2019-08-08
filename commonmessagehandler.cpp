@@ -51,24 +51,20 @@ void CommonMessageHandler::customMessageHandlerFunction(QtMsgType type,
 {
     auto& messageHandler = CommonMessageHandler::instance();
 
-    if(messageHandler.mIsFileLoggingActive || messageHandler.mIsStreamLoggingActive
-            || messageHandler.mIsUILoggingActive) {
+    if(messageHandler.mIsFileLoggingActive) {
+        messageHandler.logToFile(type, context, msg);
+    }
 
-        if(messageHandler.mIsFileLoggingActive) {
-            messageHandler.logToFile(type, context, msg);
-        }
+    if(messageHandler.mIsStreamLoggingActive){
+        messageHandler.logToStream(type, context, msg);
+    }
 
-        if(messageHandler.mIsStreamLoggingActive){
-            messageHandler.logToStream(type, context, msg);
-        }
-
-        if(messageHandler.mIsUILoggingActive) {
-            #ifdef QT_DEBUG
-                messageHandler.showDebugMessageBox(type, context, msg);
-            #else
-                messageHandler.showReleaseMessageBox(type, msg);
-            #endif
-        }
+    if(messageHandler.mIsUILoggingActive) {
+        #ifdef QT_DEBUG
+            messageHandler.showDebugMessageBox(type, context, msg);
+        #else
+            messageHandler.showReleaseMessageBox(type, msg);
+        #endif
     }
 }
 
@@ -114,15 +110,10 @@ void CommonMessageHandler::setIsUILoggingActive(bool isActive)
 
 QString CommonMessageHandler::setFilePath(QString path)
 {
-    QFileInfo fileInfo;
+    QFileInfo fileInfo(path);
 
-    if(path==nullptr) {
+    if(!fileInfo.absoluteDir().exists()) {
         fileInfo.setFile(QDir(QApplication::applicationDirPath()), QString("logs.txt"));
-    } else {
-        fileInfo.setFile(path);
-        if(!fileInfo.absoluteDir().exists()) {
-            fileInfo.setFile(QDir(QApplication::applicationDirPath()), QString("logs.txt"));
-        }
     }
 
     mFile.setFileName(fileInfo.absoluteFilePath());
