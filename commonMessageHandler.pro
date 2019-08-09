@@ -4,14 +4,21 @@ QT += \
 
 #DEFINES += QT_MESSAGELOGCONTEXT
 
-TARGET = myProgram
-TEMPLATE = app
+TARGET = commonMessageHandler
+TEMPLATE = lib
+
+DEFINES += COMMONMESSAGEHANDLER_LIBRARY
 
 HEADERS += \
     commonmessagehandler.h \
-    mainwidget.h
+    commonmessagehandler_global.h
 
 SOURCES += \
     commonmessagehandler.cpp \
-    main.cpp \
-    mainwidget.cpp
+
+install_headers.path = $$(HEADER_PATH)
+install_headers.files = $$HEADERS
+
+INSTALLS += install_headers
+
+DESTDIR = $$(LIB_PATH)

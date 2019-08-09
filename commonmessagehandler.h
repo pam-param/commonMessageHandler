@@ -1,6 +1,8 @@
 #ifndef COMMONMESSAGEHANDLER_H
 #define COMMONMESSAGEHANDLER_H
 
+#include "commonmessagehandler_global.h"
+
 #include <QFile>
 #include <QGlobalStatic>
 #include <QObject>
@@ -8,7 +10,7 @@
 
 #define CUSTOM_LOG CommonMessageHandler::customMessageHandlerFunction
 
-class CommonMessageHandler : public QObject
+class COMMONMESSAGEHANDLER_EXPORT CommonMessageHandler : public QObject
 {
     Q_OBJECT
 public:
