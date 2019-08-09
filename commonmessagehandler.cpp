@@ -112,7 +112,7 @@ QString CommonMessageHandler::setFilePath(QString path)
 {
     QFileInfo fileInfo(path);
 
-    if(!fileInfo.absoluteDir().exists()) {
+    if(!fileInfo.absoluteDir().exists() || path.isEmpty()) {
         fileInfo.setFile(QDir(QApplication::applicationDirPath()), QString("logs.txt"));
     }
 
