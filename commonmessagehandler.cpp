@@ -7,10 +7,6 @@
 #include <QTextStream>
 #include <QTime>
 
-#ifndef QT_MESSAGELOGCONTEXT
-    #warning "QT_MESSAGELOGCONTEXT undefined. Message handler will not work"
-#endif
-
 const QHash <QtMsgType, QString> CommonMessageHandler::types =
 QHash <QtMsgType, QString>{
     {QtDebugMsg, "Debug"},

@@ -8,6 +8,10 @@
 #include <QObject>
 #include <QHash>
 
+#ifndef QT_MESSAGELOGCONTEXT
+    #warning "QT_MESSAGELOGCONTEXT undefined. Message handler will not work"
+#endif
+
 #define CUSTOM_LOG CommonMessageHandler::customMessageHandlerFunction
 
 class COMMONMESSAGEHANDLER_EXPORT CommonMessageHandler : public QObject
